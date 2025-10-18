@@ -422,67 +422,14 @@ import type {
 
 ## 🚀 Release Workflow
 
-We've implemented a sophisticated release workflow inspired by the @go-corp/utils package:
+### Automated Release Management with go-workflow
 
-### Interactive Release Script
-
-```bash
-# Start interactive release process
-bun run release
-
-# See help for options
-bun run release:help
-```
-
-The release script will:
-1. 🔍 **Analyze Git History** - Automatically detect changes and recommend version bump
-2. 📝 **Smart Changelog** - Generate changelog entries from commit messages
-3. 🎯 **Version Selection** - Choose patch/minor/major with recommendations
-4. 🏗️ **Build & Test** - Ensure package builds and passes type checking
-5. 📤 **Git Operations** - Commit, tag, and push changes automatically
-6. 📦 **NPM Publishing** - Optionally publish to npm with confirmation
-
-### Changesets Workflow
-
-Alternatively, use changesets for more structured releases:
-
-```bash
-# Add a changeset (describes your changes)
-bun run changeset
-
-# Preview version updates
-bun run changeset:status
-
-# Apply version updates
-bun run changeset:version
-
-# Publish to npm
-bun run changeset:publish
-```
-
-### CI/CD Pipeline
-
-Automatic releases are triggered by git tags:
-
-1. **Push tag**: `git tag v1.1.0 && git push --tags`
-2. **GitHub Actions**: Automatically builds, tests, and publishes
-3. **NPM Release**: Package appears on npm registry
-4. **GitHub Release**: Creates release notes automatically
-
-### Manual Publishing
-
-```bash
-# Build and publish manually
-bun run publish:public
-```
-
-### 🌟 Enhanced Workflow with go-workflow
-
-We've integrated [@golive_me/go-workflow](https://www.npmjs.com/package/@golive_me/go-workflow) for advanced release automation:
+We use [@golive_me/go-workflow](https://www.npmjs.com/package/@golive_me/go-workflow) for comprehensive release automation:
 
 ```bash
 # Interactive release with GitHub integration
-npm run workflow:release
+npm run release              # Short alias
+npm run workflow:release     # Full command
 
 # Feature branch workflow with PR automation  
 npm run workflow:feature
@@ -493,6 +440,15 @@ npm run workflow:status
 # Deploy to configured targets (if any)
 npm run workflow:deploy
 ```
+
+**The release process will:**
+1. 🔍 **Analyze Git History** - Automatically detect changes and recommend version bump
+2. 📝 **Smart Changelog** - Generate changelog entries from commit messages
+3. 🎯 **Version Selection** - Choose patch/minor/major with recommendations
+4. 🏗️ **Build & Test** - Ensure package builds and passes type checking
+5. 📤 **Git Operations** - Commit, tag, and push changes automatically
+6. 📦 **NPM Publishing** - Optionally publish to npm with confirmation
+7. 🔗 **GitHub Release** - Create GitHub release with detailed notes
 
 **Key Benefits:**
 - 🤖 **Automated PR Creation** - Feature branches automatically create GitHub PRs

@@ -7,7 +7,8 @@ This document summarizes the integration of [@golive_me/go-workflow](https://www
 ### 📦 Package Installation
 - **Package**: `@golive_me/go-workflow@1.0.12` installed as dev dependency
 - **Status**: ✅ Successfully installed and working
-- **Size**: Lightweight integration with comprehensive features
+- **Legacy Systems**: ❌ Removed (changesets, custom release scripts)
+- **Single Source**: ✅ Only go-workflow package for all release management
 
 ### ⚙️ Configuration Setup
 - **Config File**: `.go-workflow.config.js` created with test framework optimizations
@@ -22,8 +23,8 @@ This document summarizes the integration of [@golive_me/go-workflow](https://www
 
 | Command | Description | Usage |
 |---------|-------------|-------|
-| `npm run workflow:init` | Initialize workflow configuration | One-time setup |
-| `npm run workflow:release` | Interactive release management | Manual releases |
+| `npm run release` | Interactive release management (alias) | Primary release command |
+| `npm run workflow:release` | Interactive release management (full) | Same as above |
 | `npm run workflow:feature` | Feature branch workflow with PR automation | Feature development |
 | `npm run workflow:deploy` | Deploy to configured targets | Deployment management |
 | `npm run workflow:status` | Show project and workflow status | Status checking |
