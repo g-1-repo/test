@@ -54,6 +54,19 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
   - Node/Bun-only interactive runner that discovers test files, groups by category (unit/integration/e2e/etc.), selects runtime/database, then shells out to `npx vitest` with the selected files and flags.
   - Not exported from the main index to maintain Cloudflare Workers compatibility (avoids Node-only APIs; see CHANGELOG note).
 
+## Shared packages
+- go-test-suite: /Users/johnnymathis/Developer/go-test-suite
+- go-workflow-v2: /Users/johnnymathis/Developer/go-workflow-v2
+- go-utils: /Users/johnnymathis/Developer/go-utils
+
+## Guidance for Warp
+- Before adding utilities/runners/workflows, check these repos for an existing implementation.
+- Consolidation rules:
+  - go-utils: generic helpers/types/logging/config
+  - go-test-suite: testing/Vitest helpers, runners, fixtures, factories
+  - go-workflow-v2: workflow orchestration/execution, release pipelines
+- When duplication is detected, propose an extraction plan and PR outline to move code to the right package.
+
 ## Notes for Warp
 
 - Prefer Bun for local development; all commands use bun.

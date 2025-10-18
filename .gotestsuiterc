@@ -1,0 +1,15 @@
+{
+  "runtime": "bun",
+  "database": "memory",
+  "verbose": true,
+  "parallel": true,
+  "maxWorkers": 2,
+  "timeout": 15000,
+  "reporter": "verbose",
+  "telemetry": {
+    "enabled": false
+  },
+  "notifications": {
+    "enabled": false
+  }
+}

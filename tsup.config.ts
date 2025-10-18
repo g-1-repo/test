@@ -15,6 +15,12 @@ export default defineConfig({
     'vitest',
     'drizzle-orm',
     'better-sqlite3',
-    'cloudflare:test'
+    'cloudflare:test',
+    // CLI-only dependencies (not needed in Workers)
+    'chalk',
+    'cosmiconfig',
+    'execa',
+    'listr2',
+    'zod'
   ],
 })

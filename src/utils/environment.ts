@@ -1,67 +1,20 @@
-import type { DatabaseProvider, Runtime, TestEnvironmentConfig } from '../types.js'
+import type { DatabaseProvider, Runtime } from '@go-corp/utils/env'
+import type { TestEnvironmentConfig } from '../types.js'
+import {
+
+  detectDatabaseProvider,
+  detectRuntime,
+  getEnv,
+  getEnvironmentInfo,
+  getRuntimeCapabilities,
+
+  setupTestEnvironment,
+  isCIEnvironment as utilsIsCIEnvironment,
+  isTestEnvironment as utilsIsTestEnvironment,
+} from '@go-corp/utils/env'
 
 /**
- * Detect the current runtime environment
- */
-export function detectRuntime(): Runtime {
-  // Cloudflare Workers
-  if (typeof globalThis !== 'undefined') {
-    if ('CloudflareWorkerGlobalScope' in globalThis || 'caches' in globalThis) {
-      return 'cloudflare-workers'
-    }
-  }
-
-  // Bun
-  if (typeof (globalThis as any).Bun !== 'undefined') {
-    return 'bun'
-  }
-
-  // Node.js
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    return 'node'
-  }
-
-  return 'unknown'
-}
-
-/**
- * Detect the best database provider for the current environment
- */
-export function detectDatabaseProvider(): DatabaseProvider {
-  const runtime = detectRuntime()
-
-  switch (runtime) {
-    case 'cloudflare-workers':
-      return 'd1'
-
-    case 'node':
-    case 'bun':
-      // Check if better-sqlite3 is available
-      try {
-        require.resolve('better-sqlite3')
-        return 'sqlite'
-      }
-      catch {
-        return 'memory'
-      }
-
-    default:
-      return 'memory'
-  }
-}
-
-/**
- * Get environment variable with fallback
- */
-export function getEnv(key: string, fallback?: string): string | undefined {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key] || fallback
-  }
-  return fallback
-}
-
-/**
- * Set environment variable
+ * Set environment variable (test-suite specific)
  */
 export function setEnv(key: string, value: string): void {
   if (typeof process !== 'undefined' && process.env) {
@@ -70,77 +23,22 @@ export function setEnv(key: string, value: string): void {
 }
 
 /**
- * Check if environment variable exists
+ * Check if environment variable exists (test-suite specific)
  */
 export function hasEnv(key: string): boolean {
   return getEnv(key) !== undefined
 }
 
-/**
- * Ensure required environment variables exist
- */
-export function ensureEnv(required: Record<string, string>): void {
-  Object.entries(required).forEach(([key, defaultValue]) => {
-    if (!hasEnv(key)) {
-      setEnv(key, defaultValue)
-    }
-  })
-}
-
-/**
- * Get runtime capabilities
- */
-export function getRuntimeCapabilities(): {
-  hasFileSystem: boolean
-  hasNetworking: boolean
-  hasDatabase: boolean
-  hasSQLite: boolean
-  hasD1: boolean
-  supportsWorkers: boolean
-} {
-  const runtime = detectRuntime()
-
-  switch (runtime) {
-    case 'cloudflare-workers':
-      return {
-        hasFileSystem: false,
-        hasNetworking: true,
-        hasDatabase: true,
-        hasSQLite: false,
-        hasD1: true,
-        supportsWorkers: true,
-      }
-
-    case 'node':
-      return {
-        hasFileSystem: true,
-        hasNetworking: true,
-        hasDatabase: true,
-        hasSQLite: true,
-        hasD1: false,
-        supportsWorkers: false,
-      }
-
-    case 'bun':
-      return {
-        hasFileSystem: true,
-        hasNetworking: true,
-        hasDatabase: true,
-        hasSQLite: true,
-        hasD1: false,
-        supportsWorkers: false,
-      }
-
-    default:
-      return {
-        hasFileSystem: false,
-        hasNetworking: false,
-        hasDatabase: false,
-        hasSQLite: false,
-        hasD1: false,
-        supportsWorkers: false,
-      }
-  }
+// Re-export for backward compatibility
+export {
+  type DatabaseProvider,
+  detectDatabaseProvider,
+  detectRuntime,
+  getEnv,
+  getEnvironmentInfo,
+  getRuntimeCapabilities,
+  type Runtime,
+  setupTestEnvironment,
 }
 
 /**
@@ -161,55 +59,14 @@ export function createOptimizedTestConfig(): TestEnvironmentConfig {
 }
 
 /**
- * Environment info for debugging
+ * Ensure required environment variables exist (test-suite specific)
  */
-export function getEnvironmentInfo(): {
-  runtime: Runtime
-  databaseProvider: DatabaseProvider
-  capabilities: ReturnType<typeof getRuntimeCapabilities>
-  nodeVersion?: string
-  bunVersion?: string
-  platform?: string
-  arch?: string
-} {
-  const runtime = detectRuntime()
-  const info: ReturnType<typeof getEnvironmentInfo> = {
-    runtime,
-    databaseProvider: detectDatabaseProvider(),
-    capabilities: getRuntimeCapabilities(),
-  }
-
-  // Add Node.js specific info
-  if (typeof process !== 'undefined') {
-    info.nodeVersion = process.versions?.node
-    info.bunVersion = process.versions?.bun
-    info.platform = process.platform
-    info.arch = process.arch
-  }
-
-  // Add Bun specific info
-  if (typeof (globalThis as any).Bun !== 'undefined') {
-    info.bunVersion = (globalThis as any).Bun.version
-  }
-
-  return info
-}
-
-/**
- * Setup test environment variables
- */
-export function setupTestEnvironment(): void {
-  const defaultEnv = {
-    NODE_ENV: 'test',
-    // Common test variables
-    RESEND_API_KEY: 'test_key_mock',
-    DATABASE_URL: ':memory:',
-    // Disable external services in tests
-    DISABLE_ANALYTICS: 'true',
-    DISABLE_MONITORING: 'true',
-  }
-
-  ensureEnv(defaultEnv)
+export function ensureEnv(required: Record<string, string>): void {
+  Object.entries(required).forEach(([key, defaultValue]) => {
+    if (!hasEnv(key)) {
+      setEnv(key, defaultValue)
+    }
+  })
 }
 
 /**
@@ -241,19 +98,21 @@ export function setupRuntimeSpecificTests(): void {
 }
 
 /**
- * Check if we're in a test environment
+ * Check if we're in a test environment (test-suite specific override)
  */
 export function isTestEnvironment(): boolean {
-  return getEnv('NODE_ENV') === 'test'
+  return utilsIsTestEnvironment()
+    || getEnv('NODE_ENV') === 'test'
     || getEnv('VITEST') === 'true'
     || getEnv('JEST_WORKER_ID') !== undefined
 }
 
 /**
- * Check if we're in CI environment
+ * Check if we're in CI environment (test-suite specific override)
  */
 export function isCIEnvironment(): boolean {
-  return getEnv('CI') === 'true'
+  return utilsIsCIEnvironment()
+    || getEnv('CI') === 'true'
     || getEnv('GITHUB_ACTIONS') === 'true'
     || getEnv('GITLAB_CI') === 'true'
     || getEnv('TRAVIS') === 'true'

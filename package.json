@@ -63,7 +63,13 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
+    "@go-corp/utils": "^1.7.0",
     "better-sqlite3": "^12.4.1",
-    "enquirer": "^2.4.1"
+    "chalk": "^5.3.0",
+    "cosmiconfig": "^9.0.0",
+    "enquirer": "^2.4.1",
+    "execa": "^9.4.0",
+    "listr2": "^8.2.4",
+    "zod": "^3.23.8"
   }
 }

@@ -116,6 +116,116 @@ factoryTest('consistent test data', async (factory) => {
 }, 12345) // Custom seed
 ```
 
+## 🔧 Configuration
+
+The test runner supports enterprise-level configuration through multiple formats:
+
+### Configuration Files
+
+The test runner automatically searches for configuration in:
+- `.gotestsuiterc` (JSON)
+- `.gotestsuiterc.json`
+- `.gotestsuiterc.yaml` or `.gotestsuiterc.yml`
+- `.gotestsuiterc.js`, `.gotestsuiterc.mjs`, `.gotestsuiterc.cjs`
+- `gotestsuite.config.js`, `gotestsuite.config.mjs`, `gotestsuite.config.cjs`
+- `package.json` under the `"gotestsuite"` key
+
+### Example Configuration
+
+```json
+{
+  "runtime": "node",
+  "database": "sqlite",
+  "categories": ["unit", "integration"],
+  "parallel": true,
+  "maxWorkers": 4,
+  "timeout": 30000,
+  "reporter": "default",
+  "coverage": false,
+  "telemetry": {
+    "enabled": false
+  },
+  "notifications": {
+    "enabled": false,
+    "slack": {
+      "webhook": "https://hooks.slack.com/services/...",
+      "channel": "#test-results"
+    }
+  }
+}
+```
+
+### Enterprise Features
+
+#### Telemetry
+Track test runner usage and performance metrics:
+
+```json
+{
+  "telemetry": {
+    "enabled": true,
+    "endpoint": "https://api.yourcompany.com/telemetry",
+    "apiKey": "your-api-key"
+  }
+}
+```
+
+#### Notifications
+Get notified when tests complete:
+
+```json
+{
+  "notifications": {
+    "enabled": true,
+    "slack": {
+      "webhook": "https://hooks.slack.com/services/...",
+      "channel": "#test-results"
+    },
+    "email": {
+      "smtp": "smtp.yourcompany.com",
+      "from": "tests@yourcompany.com",
+      "to": ["dev-team@yourcompany.com"]
+    }
+  }
+}
+```
+
+### CLI Options
+
+All configuration options can be overridden via CLI flags:
+
+```bash
+# Runtime and database
+bun run test-runner --runtime node --database sqlite
+
+# Test selection
+bun run test-runner --categories unit,integration --reporter verbose
+
+# Execution control
+bun run test-runner --parallel --max-workers 8 --timeout 60000
+
+# Output control
+bun run test-runner --verbose --coverage --bail
+
+# Watch mode for development
+bun run test-runner --watch --categories unit
+```
+
+### Environment Variables
+
+Set environment variables for test execution:
+
+```json
+{
+  "env": {
+    "NODE_ENV": "test",
+    "DEBUG": "app:*",
+    "DATABASE_URL": "test.db"
+  },
+  "envFile": ".env.test"
+}
+```
+
 ## Core Testing Utilities
 
 ### Request Helpers
