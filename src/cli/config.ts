@@ -32,7 +32,7 @@ const TestRunnerConfigSchema = z.object({
   coverage: z.boolean().optional(),
 
   // Environment
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   envFile: z.string().optional(),
 
   // Test discovery
