@@ -28,7 +28,9 @@
     "test-runner": "bun run src/cli/test-runner.ts",
     "release": "bunx go-workflow release",
     "workflow:release": "bunx go-workflow release",
-    "workflow:status": "bunx go-workflow status"
+    "workflow:status": "bunx go-workflow status",
+    "test": "echo \"Warning: no test suite available\" && exit 0",
+    "test:ci": "echo \"Warning: no test suite available\" && exit 0"
   },
   "keywords": [
     "testing",
