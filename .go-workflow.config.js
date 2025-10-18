@@ -4,7 +4,7 @@
 export default {
   // Project information
   name: '@go-corp/test-framework',
-  repository: 'https://github.com/go-corp/test-framework',
+  repository: 'https://github.com/golive-dev/go-test-framework',
   defaultBranch: 'main',
 
   // Pre/post release commands

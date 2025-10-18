@@ -53,7 +53,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/go-corp/test-framework"
+    "url": "https://github.com/golive-dev/go-test-framework"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.44.6",
