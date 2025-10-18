@@ -23,7 +23,7 @@ interface TestCategory {
 }
 
 /**
- * Interactive test runner for @go-corp/test-framework
+ * Interactive test runner for @go-corp/test-suite
  */
 class TestRunner {
   private testFiles: TestFile[] = []
@@ -81,7 +81,7 @@ class TestRunner {
    */
   private showHelp(): void {
     console.log(`
-@go-corp/test-framework Interactive Test Runner
+@go-corp/test-suite Interactive Test Runner
 
 Usage:
   test-runner [options]
@@ -332,7 +332,7 @@ Examples:
     // Prepare environment variables
     const env: Record<string, string> = {
       ...process.env,
-      TEST_RUNNER: 'go-corp-test-framework',
+      TEST_RUNNER: 'go-corp-test-suite',
       TEST_RUNTIME: runtime,
       TEST_CATEGORIES: categories.join(','),
     }
@@ -378,7 +378,7 @@ Examples:
    * Run the interactive test runner
    */
   async run(): Promise<void> {
-    console.log('🧪 @go-corp/test-framework Interactive Test Runner\\n')
+    console.log('🧪 @go-corp/test-suite Interactive Test Runner\\n')
 
     // Show environment information
     this.showEnvironmentInfo()

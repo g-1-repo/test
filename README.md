@@ -1,12 +1,12 @@
-# @go-corp/test-framework
+# @go-corp/test-suite
 
-🧪 **The Ultimate Hybrid Test Framework for Modern Web Applications**
+🧪 **Complete Testing Suite for Hono Applications**
 
-A comprehensive, multi-runtime test framework designed for Cloudflare Workers, Node.js, and Bun applications with Hono, featuring smart data factories, automatic database management, and interactive test running.
+A comprehensive testing toolkit for Hono applications across Cloudflare Workers, Node.js, and Bun runtimes. Features HTTP test utilities, smart data factories, database adapters, and environment management - everything you need to test modern web applications.
 
 ## 🎯 What We've Built
 
-### 🏗️ Hybrid Test Framework (@go-corp/test-framework)
+### 🛠️ Complete Testing Suite (@go-corp/test-suite)
 •  **Multi-Runtime Support**: Works seamlessly with Cloudflare Workers, Node.js, and Bun  
 •  **Environment-Agnostic**: Adapters for D1, SQLite, in-memory, and Drizzle databases  
 •  **NPM Ready**: Complete package structure for publishing and reuse across projects  
@@ -31,7 +31,7 @@ A comprehensive, multi-runtime test framework designed for Cloudflare Workers, N
 ## Installation
 
 ```bash
-bun add --dev @go-corp/test-framework
+bun add --dev @go-corp/test-suite
 ```
 
 ## Quick Start
@@ -40,7 +40,7 @@ bun add --dev @go-corp/test-framework
 
 ```typescript
 // test/setup.ts
-import { setupCloudflareWorkerTests } from '@go-corp/test-framework'
+import { setupCloudflareWorkerTests } from '@go-corp/test-suite'
 
 // Sets up console mocking and required environment variables
 setupCloudflareWorkerTests()
@@ -49,7 +49,7 @@ setupCloudflareWorkerTests()
 ### Simple Request Testing
 
 ```typescript
-import { requestWithCookies, postJSON } from '@go-corp/test-framework'
+import { requestWithCookies, postJSON } from '@go-corp/test-suite'
 import app from '../src/app'
 
 test('user authentication flow', async () => {
@@ -77,7 +77,7 @@ import {
   createHttpTestClient,
   dbTest,
   factoryTest 
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 import app from '../src/app'
 
 // Configure test framework
@@ -125,7 +125,7 @@ factoryTest('consistent test data', async (factory) => {
 Makes a request with automatic cookie persistence across test requests.
 
 ```typescript
-import { requestWithCookies, resetCookies } from '@go-corp/test-framework'
+import { requestWithCookies, resetCookies } from '@go-corp/test-suite'
 
 // Start with clean session
 resetCookies()
@@ -187,7 +187,7 @@ const { json } = await postJSON(app, '/api/users', {
 Use different `jarKey` values to isolate test sessions:
 
 ```typescript
-import { requestWithCookies, resetCookies } from '@go-corp/test-framework'
+import { requestWithCookies, resetCookies } from '@go-corp/test-suite'
 
 test('concurrent user sessions', async () => {
   // User A login
@@ -220,7 +220,7 @@ test('concurrent user sessions', async () => {
 Create isolated test contexts with automatic cleanup:
 
 ```typescript
-import { createTestContext } from '@go-corp/test-framework'
+import { createTestContext } from '@go-corp/test-suite'
 
 test('isolated test context', async () => {
   const ctx = createTestContext()
@@ -249,7 +249,7 @@ import {
   clearOutbox, 
   assertEmailSent, 
   extractVerificationLink 
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 test('password reset flow', async () => {
   await clearOutbox(app)
@@ -281,7 +281,7 @@ import {
   getLastEmail,
   waitForEmail,
   extractOTPCode
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 test('email verification with OTP', async () => {
   await clearOutbox(app)
@@ -312,7 +312,7 @@ test('email verification with OTP', async () => {
 ### Basic Setup
 
 ```typescript
-import { setupCloudflareWorkerTests } from '@go-corp/test-framework'
+import { setupCloudflareWorkerTests } from '@go-corp/test-suite'
 
 // Automatic setup with sensible defaults
 setupCloudflareWorkerTests()
@@ -321,7 +321,7 @@ setupCloudflareWorkerTests()
 ### Custom Setup
 
 ```typescript
-import { setupTestEnvironment } from '@go-corp/test-framework'
+import { setupTestEnvironment } from '@go-corp/test-suite'
 
 setupTestEnvironment({
   mockConsole: true,
@@ -341,7 +341,7 @@ setupTestEnvironment({
 ### Environment Variables
 
 ```typescript
-import { ensureTestEnv, withTestEnv } from '@go-corp/test-framework'
+import { ensureTestEnv, withTestEnv } from '@go-corp/test-suite'
 
 // Ensure variables exist with defaults
 ensureTestEnv({
@@ -364,7 +364,7 @@ await testWithEnv()
 ### Time Mocking
 
 ```typescript
-import { createTimeMock } from '@go-corp/test-framework'
+import { createTimeMock } from '@go-corp/test-suite'
 
 test('time-sensitive operations', async () => {
   const mockTime = createTimeMock(new Date('2024-01-01'))
@@ -392,7 +392,7 @@ test('time-sensitive operations', async () => {
 ### Unique Data Generation
 
 ```typescript
-import { uniqueEmail, uniqueUsername } from '@go-corp/test-framework'
+import { uniqueEmail, uniqueUsername } from '@go-corp/test-suite'
 
 test('user creation', async () => {
   const email = uniqueEmail() // test+1@example.com
@@ -407,7 +407,7 @@ test('user creation', async () => {
 ### Wait Utility
 
 ```typescript
-import { wait } from '@go-corp/test-framework'
+import { wait } from '@go-corp/test-suite'
 
 test('async operations', async () => {
   // Trigger async operation
@@ -492,27 +492,27 @@ import type {
   DatabaseProvider,
   TestEnvironmentConfig,
   HonoApp
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 // HTTP testing types
 import type {
   TestRequestOptions,
   TestResponse,
   HttpClientOptions
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 // Email testing types
 import type {
   TestEmail,
   TestSetupOptions
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 // Factory types
 import type {
   FactoryConfig,
   FactoryFunction,
   TestDataGenerators
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 // Store and lifecycle types
 import type {
@@ -521,12 +521,12 @@ import type {
   VitestConfig,
   TestSuiteConfig,
   TestRunnerConfig
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 
 // Database adapter type
 import type {
   DatabaseAdapter
-} from '@go-corp/test-framework'
+} from '@go-corp/test-suite'
 ```
 
 ## 🛠️ Development

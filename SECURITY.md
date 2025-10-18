@@ -10,7 +10,7 @@ We actively maintain and provide security updates for the following versions:
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in @go-corp/test-framework, please report it responsibly:
+If you discover a security vulnerability in @go-corp/test-suite, please report it responsibly:
 
 ### 🔒 Private Disclosure
 
@@ -38,7 +38,7 @@ We appreciate security researchers who help keep our users safe. With your permi
 
 ## Security Best Practices
 
-When using @go-corp/test-framework:
+When using @go-corp/test-suite:
 
 ### ✅ Recommended
 - Always use the latest stable version
@@ -71,4 +71,4 @@ The test framework itself undergoes security testing:
 
 ---
 
-Thank you for helping keep @go-corp/test-framework and our community safe! 🛡️
+Thank you for helping keep @go-corp/test-suite and our community safe! 🛡️
