@@ -511,7 +511,8 @@ export class TestRunner {
       if (fileConfig.categories && typeof fileConfig.categories === 'object' && !Array.isArray(fileConfig.categories)) {
         configCategories = Object.keys(fileConfig.categories)
       }
-    } catch (error) {
+    }
+    catch (error) {
       this.logger.debug('Could not load config for category selection', { error })
     }
 
@@ -521,11 +522,11 @@ export class TestRunner {
       console.log('\n📂 Category Selection')
       console.log('─────────────────────')
       console.log('Using configured categories from test-suite.config.js:')
-      configCategories.forEach(cat => {
+      configCategories.forEach((cat) => {
         console.log(`  ${this.getCategoryEmoji(cat)} ${cat}`)
       })
       console.log()
-      
+
       this.logger.info(`Running configured categories: ${configCategories.join(', ')}`)
       return configCategories
     }
