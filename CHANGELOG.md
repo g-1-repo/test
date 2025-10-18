@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0] - 2025-10-18
+
+### Features
+
+- rename package to @go-corp/test-suite
+
+
 ## [1.0.5] - 2025-10-18
 
 ### Other Changes
