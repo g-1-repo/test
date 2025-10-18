@@ -26,13 +26,9 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "test-runner": "bun run src/cli/test-runner.ts",
-    "release": "go-workflow release",
-    "workflow:init": "go-workflow init",
-    "workflow:release": "go-workflow release",
-    "workflow:feature": "go-workflow feature",
-    "workflow:deploy": "go-workflow deploy",
-    "workflow:status": "go-workflow status",
-    "workflow:demo": "node scripts/workflow-demo.js"
+    "release": "bunx go-workflow release",
+    "workflow:release": "bunx go-workflow release",
+    "workflow:status": "bunx go-workflow status"
   },
   "keywords": [
     "testing",
@@ -56,7 +52,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.0.0",
-    "@golive_me/go-workflow": "^1.0.12",
+    "@go-corp/workflow": "^2.11.4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.8.1",
     "eslint": "^9.38.0",

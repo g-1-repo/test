@@ -420,45 +420,6 @@ import type {
 } from '@go-corp/test-framework'
 ```
 
-## 🚀 Release Workflow
-
-### Automated Release Management with go-workflow
-
-We use [@golive_me/go-workflow](https://www.npmjs.com/package/@golive_me/go-workflow) for comprehensive release automation:
-
-```bash
-# Interactive release with GitHub integration
-npm run release              # Short alias
-npm run workflow:release     # Full command
-
-# Feature branch workflow with PR automation  
-npm run workflow:feature
-
-# View project and workflow status
-npm run workflow:status
-
-# Deploy to configured targets (if any)
-npm run workflow:deploy
-```
-
-**The release process will:**
-1. 🔍 **Analyze Git History** - Automatically detect changes and recommend version bump
-2. 📝 **Smart Changelog** - Generate changelog entries from commit messages
-3. 🎯 **Version Selection** - Choose patch/minor/major with recommendations
-4. 🏗️ **Build & Test** - Ensure package builds and passes type checking
-5. 📤 **Git Operations** - Commit, tag, and push changes automatically
-6. 📦 **NPM Publishing** - Optionally publish to npm with confirmation
-7. 🔗 **GitHub Release** - Create GitHub release with detailed notes
-
-**Key Benefits:**
-- 🤖 **Automated PR Creation** - Feature branches automatically create GitHub PRs
-- 📝 **Smart Changelog Generation** - Parses conventional commits for automated changelog entries
-- 🏷️ **GitHub Releases** - Automatically creates GitHub releases with detailed notes
-- 🚀 **Multi-target Deployment** - Deploy to multiple environments with confirmation prompts
-- ⚙️ **Flexible Configuration** - Customizable workflow via `.go-workflow.config.js`
-
-**Configuration** is handled via `.go-workflow.config.js` with sensible defaults for this test framework project.
-
 ## 🛠️ Development
 
 ```bash
