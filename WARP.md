@@ -27,6 +27,9 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 - Interactive release (quality gates, git, npm): `bun run release`
 - Full release workflow: `bun run workflow:release`
 - Check workflow status: `bun run workflow:status`
+- Dry run (show what would happen): `bun run release --dry-run`
+- Skip specific deployments: `bun run release --skip-npm --skip-cloudflare`
+- Force specific version: `bun run release --type minor`
 
 ## Development workflow
 
