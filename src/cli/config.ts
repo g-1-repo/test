@@ -3,12 +3,19 @@ import { z } from 'zod'
 
 // Zod schema for test runner configuration
 const TestRunnerConfigSchema = z.object({
+  // Package metadata
+  packageName: z.string().optional(),
+  packageType: z.enum(['api', 'library', 'cli', 'workspace']).optional(),
+
   // Runtime configuration
   runtime: z.enum(['cloudflare-workers', 'node', 'bun']).optional(),
   database: z.enum(['memory', 'sqlite', 'd1', 'drizzle-sqlite', 'drizzle-d1']).optional(),
 
   // Test selection
-  categories: z.array(z.string()).optional(),
+  categories: z.union([
+    z.record(z.string(), z.string()), // category name -> pattern (config file)
+    z.array(z.string()), // category names (CLI override)
+  ]).optional(),
   patterns: z.array(z.string()).optional(),
   exclude: z.array(z.string()).optional(),
 
@@ -32,6 +39,9 @@ const TestRunnerConfigSchema = z.object({
   testDir: z.string().optional(),
   testMatch: z.array(z.string()).optional(),
   testIgnore: z.array(z.string()).optional(),
+  setupFiles: z.array(z.string()).optional(),
+  globalSetup: z.string().optional(),
+  globalTeardown: z.string().optional(),
 
   // Advanced options
   bail: z.boolean().optional(),
@@ -75,6 +85,9 @@ export class ConfigLoader {
   private explorer = cosmiconfig('gotestsuite', {
     searchPlaces: [
       'package.json',
+      'test-suite.config.js',
+      'test-suite.config.mjs',
+      'test-suite.config.cjs',
       '.gotestsuiterc',
       '.gotestsuiterc.json',
       '.gotestsuiterc.yaml',
@@ -137,6 +150,41 @@ export class ConfigLoader {
    */
   validate(config: unknown): TestRunnerConfig {
     return TestRunnerConfigSchema.parse(config)
+  }
+
+  /**
+   * Detect package information from package.json
+   */
+  async detectPackage(searchFrom?: string): Promise<{ name?: string, type?: string, testScript?: string }> {
+    try {
+      const { readFile } = await import('node:fs/promises')
+      const { join } = await import('node:path')
+
+      const packagePath = join(searchFrom || process.cwd(), 'package.json')
+      const packageJson = JSON.parse(await readFile(packagePath, 'utf-8'))
+
+      return {
+        name: packageJson.name,
+        type: this.inferPackageType(packageJson),
+        testScript: packageJson.scripts?.test,
+      }
+    }
+    catch {
+      return {}
+    }
+  }
+
+  /**
+   * Infer package type from package.json
+   */
+  private inferPackageType(packageJson: any): string {
+    if (packageJson.main && packageJson.bin)
+      return 'cli'
+    if (packageJson.dependencies?.hono || packageJson.dependencies?.['@hono/zod-openapi'])
+      return 'api'
+    if (packageJson.type === 'module' && !packageJson.main)
+      return 'library'
+    return 'library'
   }
 }
 

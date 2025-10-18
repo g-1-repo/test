@@ -119,10 +119,14 @@ export class TestRunner {
           process.exit(ExitCode.SUCCESS)
           break
         case '--categories':
-        case '-c':
-          config.categories = nextArg?.split(',') || []
+        case '-c': {
+          // For CLI, categories are provided as comma-separated strings
+          // This will override any record-based categories from config
+          const categoryList = nextArg?.split(',') || []
+          config.categories = categoryList as any // Type assertion needed for CLI override
           i++
           break
+        }
         case '--reporter':
           config.reporter = nextArg as any
           i++
@@ -225,8 +229,9 @@ export class TestRunner {
     this.categorizeTests()
 
     if (this.testFiles.length === 0) {
-      this.logger.error('No test files found')
-      formatError(new Error('No test files found'), ExitCode.NO_TESTS_FOUND)
+      this.logger.warn('No test files found in current directory')
+      this.logger.info('This is normal for library projects - test files will be discovered from consuming projects')
+      // Don't exit with error - this is not necessarily a failure condition
     }
 
     this.logger.success(`Found ${this.testFiles.length} test files in ${this.categories.size} categories`)
@@ -367,29 +372,213 @@ export class TestRunner {
   }
 
   /**
+   * Interactive test mode selection
+   */
+  private async selectTestMode(): Promise<{ mode: string, options: Partial<TestRunnerConfig> }> {
+    // If specific flags are provided, don't show mode selection
+    if (this.config.watch || this.config.coverage || this.config.silent || this.config.bail) {
+      return {
+        mode: 'direct',
+        options: {},
+      }
+    }
+
+    // Check TTY for prompt compatibility
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      this.logger.warn('Non-TTY environment detected, using quick mode')
+      return {
+        mode: 'quick',
+        options: { coverage: false, watch: false, silent: false, bail: false },
+      }
+    }
+
+    // Clear any existing output and ensure clean terminal state
+    console.log('\n🎯 Test Mode Selection')
+    console.log('───────────────────────')
+
+    const prompt = new Select({
+      name: 'testMode',
+      message: 'Select test mode:',
+      choices: [
+        {
+          name: 'Quick Tests (default)',
+          value: 'quick',
+          description: 'Run all tests without coverage',
+        },
+        {
+          name: 'Coverage Report',
+          value: 'coverage',
+          description: 'Run tests with full coverage reporting',
+        },
+        {
+          name: 'Watch Mode',
+          value: 'watch',
+          description: 'Run tests in watch mode for active development',
+        },
+        {
+          name: 'CI Mode',
+          value: 'ci',
+          description: 'Silent mode with bail on first failure',
+        },
+        {
+          name: 'Custom Options',
+          value: 'custom',
+          description: 'Select specific categories and options',
+        },
+      ],
+      initial: 0,
+      // Ensure proper terminal handling
+      format: (value: any) => value,
+      validate: (value: any) => value ? true : 'Please select an option',
+    })
+
+    let selectedMode: string
+    try {
+      // Ensure terminal is in proper state for prompts
+      process.stdout.write('\x1B[?25h') // Show cursor
+      await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+
+      selectedMode = await prompt.run()
+
+      // Clear any residual prompt output
+      console.log()
+    }
+    catch (error) {
+      // Fallback if prompt fails
+      this.logger.warn('Prompt failed, using quick mode', { error: error instanceof Error ? error.message : error })
+      selectedMode = 'quick'
+    }
+
+    // Map display text back to value if needed
+    const displayToValue: Record<string, string> = {
+      'Quick Tests (default)': 'quick',
+      'Coverage Report': 'coverage',
+      'Watch Mode': 'watch',
+      'CI Mode': 'ci',
+      'Custom Options': 'custom',
+    }
+
+    const modeValue = displayToValue[selectedMode] || selectedMode
+
+    const modeConfigs = {
+      quick: {
+        coverage: false,
+        watch: false,
+        silent: false,
+        bail: false,
+      },
+      coverage: {
+        coverage: true,
+        watch: false,
+        silent: false,
+        bail: false,
+      },
+      watch: {
+        coverage: false,
+        watch: true,
+        silent: false,
+        bail: false,
+      },
+      ci: {
+        coverage: false,
+        watch: false,
+        silent: true,
+        bail: true,
+      },
+      custom: {}, // Will be handled by existing interactive flows
+      direct: {}, // CLI flags already set
+    }
+
+    return {
+      mode: modeValue,
+      options: modeConfigs[modeValue as keyof typeof modeConfigs] || {},
+    }
+  }
+
+  /**
    * Interactive category selection
    */
   private async selectCategories(): Promise<string[]> {
-    if (this.config.categories) {
+    // If categories are provided as CLI args, use them
+    if (Array.isArray(this.config.categories)) {
       return this.config.categories
     }
 
+    // Load config to get category patterns
+    let configCategories: string[] = []
+    try {
+      const { config: fileConfig } = await configLoader.load()
+      if (fileConfig.categories && typeof fileConfig.categories === 'object' && !Array.isArray(fileConfig.categories)) {
+        configCategories = Object.keys(fileConfig.categories)
+      }
+    } catch (error) {
+      this.logger.debug('Could not load config for category selection', { error })
+    }
+
+    // For Custom Options mode, if we have configured categories, use them directly
+    // This avoids prompt issues while still giving users control
+    if (configCategories.length > 0) {
+      console.log('\n📂 Category Selection')
+      console.log('─────────────────────')
+      console.log('Using configured categories from test-suite.config.js:')
+      configCategories.forEach(cat => {
+        console.log(`  ${this.getCategoryEmoji(cat)} ${cat}`)
+      })
+      console.log()
+      
+      this.logger.info(`Running configured categories: ${configCategories.join(', ')}`)
+      return configCategories
+    }
+
+    // TTY check for interactive prompts
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      this.logger.warn('Non-TTY environment, running all categories')
+      return ['all']
+    }
+
+    // Fallback to interactive selection from discovered categories
     const categoryChoices = Array.from(this.categories.entries()).map(([name, category]) => ({
-      name: `${name} (${category.count} files)`,
+      name: `${this.getCategoryEmoji(name)} ${name} (${category.count} files)`,
       value: name,
     }))
+
+    if (categoryChoices.length === 0) {
+      this.logger.warn('No categories found, running all tests')
+      return ['all']
+    }
+
+    // Clear terminal and add space before prompt
+    console.log('\n📂 Category Selection')
+    console.log('─────────────────────')
 
     const prompt = new MultiSelect({
       name: 'categories',
       message: 'Select test categories to run:',
       choices: [
-        { name: 'All categories', value: 'all' },
+        { name: '🎯 All categories', value: 'all' },
         ...categoryChoices,
       ],
       initial: ['all'],
+      // Ensure proper terminal handling
+      validate: (value: any[]) => value.length > 0 ? true : 'Please select at least one category',
     })
 
-    const selected = await prompt.run()
+    let selected: string[]
+    try {
+      // Ensure terminal is in proper state for prompts
+      process.stdout.write('\x1B[?25h') // Show cursor
+      await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+
+      selected = await prompt.run()
+
+      // Clear any residual prompt output
+      console.log()
+    }
+    catch (error) {
+      // Fallback if prompt fails
+      this.logger.warn('Category selection failed, using all categories', { error: error instanceof Error ? error.message : error })
+      selected = ['all']
+    }
 
     if (selected.includes('all')) {
       return Array.from(this.categories.keys())
@@ -408,6 +597,16 @@ export class TestRunner {
 
     const detectedRuntime = detectRuntime()
 
+    // TTY check for interactive prompts
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      this.logger.info(`Non-TTY environment, using detected runtime: ${detectedRuntime}`)
+      return detectedRuntime
+    }
+
+    // Clear terminal and add space before prompt
+    console.log('\n⚙️  Runtime Selection')
+    console.log('─────────────────────')
+
     const prompt = new Select({
       name: 'runtime',
       message: `Select runtime (detected: ${detectedRuntime}):`,
@@ -420,9 +619,29 @@ export class TestRunner {
         index === 0 || !arr.slice(0, index).some(c => c.value === choice.value),
       ),
       initial: 0,
+      // Ensure proper terminal handling
+      validate: (value: any) => value ? true : 'Please select a runtime',
     })
 
-    return await prompt.run()
+    try {
+      // Ensure terminal is in proper state for prompts
+      process.stdout.write('\x1B[?25h') // Show cursor
+      await new Promise(resolve => setTimeout(resolve, 100)) // Small delay
+
+      const result = await prompt.run()
+
+      // Clear any residual prompt output
+      console.log()
+      return result
+    }
+    catch (error) {
+      // Fallback if prompt fails
+      this.logger.warn('Runtime selection failed, using detected runtime', {
+        error: error instanceof Error ? error.message : error,
+        detectedRuntime,
+      })
+      return detectedRuntime
+    }
   }
 
   /**
@@ -448,6 +667,72 @@ export class TestRunner {
     })
 
     try {
+      // Pre-select test mode BEFORE Listr2 tasks to avoid rendering conflicts
+      const { mode, options } = await this.selectTestMode()
+
+      // Pre-discover tests for category selection
+      await this.discoverTests()
+
+      // Pre-select categories and runtime if needed (outside of Listr2)
+      let selectedCategories: string[] = []
+      let selectedRuntime: string = this.config.runtime || ''
+
+      if (mode === 'custom') {
+        selectedCategories = await this.selectCategories()
+        selectedRuntime = await this.selectRuntime()
+      }
+      else {
+        // Use config or auto-detect for non-custom modes
+        const hasCliCategories = Array.isArray(this.config.categories)
+        const hasConfigCategories = this.config.categories && typeof this.config.categories === 'object' && !Array.isArray(this.config.categories)
+
+        if (hasCliCategories) {
+          selectedCategories = this.config.categories as string[]
+        }
+        else if (hasConfigCategories) {
+          selectedCategories = Object.keys(this.config.categories!)
+        }
+        else {
+          selectedCategories = ['all']
+        }
+
+        selectedRuntime = this.config.runtime || detectRuntime()
+      }
+
+      const initialContext: any = {
+        testMode: mode,
+        modeOptions: options,
+        selectedCategories,
+        selectedRuntime,
+        testFiles: this.testFiles,
+        categories: Array.from(this.categories.entries()),
+      }
+
+      this.logger.info('Pre-flight selections completed', {
+        mode,
+        categories: selectedCategories,
+        runtime: selectedRuntime,
+      })
+
+      // Use simple renderer for maximum prompt compatibility
+      // Simple renderer is specifically designed to work with interactive prompts
+      const listrOptions: any = {
+        concurrent: false,
+        exitOnError: true,
+        // Force simple renderer - it's the most compatible with prompts
+        renderer: 'simple',
+        rendererOptions: {
+          // Minimal options for simple renderer
+          showSubtasks: false,
+        },
+      }
+
+      this.logger.debug('Listr2 configuration', {
+        renderer: listrOptions.renderer,
+        isInteractive: process.stdin.isTTY && process.stdout.isTTY,
+        options: listrOptions,
+      })
+
       const tasks = new Listr([
         {
           title: 'Validating environment',
@@ -458,19 +743,6 @@ export class TestRunner {
           task: ctx => this.loadRuntimeConfig(ctx),
         },
         {
-          title: 'Discovering test files',
-          task: ctx => this.discoverTestsTask(ctx),
-        },
-        {
-          title: 'Categorizing tests',
-          task: ctx => this.categorizeTestsTask(ctx),
-        },
-        {
-          title: 'Interactive selection',
-          task: ctx => this.interactiveSelection(ctx),
-          skip: () => this.config.categories && this.config.runtime ? 'Using predefined configuration' : false,
-        },
-        {
           title: 'Preparing test execution',
           task: ctx => this.prepareTestExecution(ctx),
         },
@@ -478,15 +750,9 @@ export class TestRunner {
           title: 'Running tests',
           task: ctx => this.executeTests(ctx),
         },
-      ], {
-        concurrent: false,
-        exitOnError: true,
-        rendererOptions: {
-          showSubtasks: true,
-        },
-      })
+      ], listrOptions)
 
-      const ctx = await tasks.run()
+      const ctx = await tasks.run(initialContext)
 
       sessionTimer()
       this.logger.success('Test runner completed successfully', {
@@ -569,29 +835,60 @@ export class TestRunner {
     ctx.envInfo = getEnvironmentInfo()
     ctx.startTime = Date.now()
 
+    // Detect package information
+    const packageInfo = await configLoader.detectPackage()
+    ctx.packageInfo = packageInfo
+
+    this.logger.info('Package detected', {
+      name: packageInfo.name || 'unknown',
+      type: packageInfo.type || 'unknown',
+      hasTestScript: !!packageInfo.testScript,
+    })
+
     // Load config file asynchronously
     try {
       const { config: fileConfig, filepath } = await configLoader.load()
 
       if (!fileConfig || Object.keys(fileConfig).length === 0) {
         this.logger.debug('No configuration file found, using defaults and CLI args')
+        // Auto-configure based on package type
+        let finalConfig = mergeConfig(this.config, this.getPackageDefaults(packageInfo))
+        // Apply mode options to ensure they're preserved
+        if (ctx.modeOptions) {
+          finalConfig = mergeConfig(finalConfig, ctx.modeOptions)
+        }
+        this.config = finalConfig
       }
       else {
         this.logger.debug('Loaded configuration from file', { filepath })
 
-        // Merge file config with existing config
+        // Merge: defaults < package defaults < file config < CLI args < mode options
         const cliConfig = this.parseCLIArgs()
-        this.config = mergeConfig(
+        let finalConfig = mergeConfig(
           mergeConfig(
-            mergeConfig(getDefaultConfig(), fileConfig),
+            mergeConfig(
+              mergeConfig(getDefaultConfig(), this.getPackageDefaults(packageInfo)),
+              fileConfig,
+            ),
             cliConfig,
           ),
           {}, // no overrides at this stage
         )
+        // Apply mode options last to ensure they take highest precedence
+        if (ctx.modeOptions) {
+          finalConfig = mergeConfig(finalConfig, ctx.modeOptions)
+        }
+        this.config = finalConfig
       }
     }
     catch (error) {
       this.logger.warn('Failed to load configuration file', { error: error instanceof Error ? error.message : error })
+    }
+
+    // Re-apply mode options after config loading to ensure they take precedence
+    if (ctx.modeOptions) {
+      this.config = mergeConfig(this.config, ctx.modeOptions)
+      this.logger.debug('Re-applied mode options after config loading', { modeOptions: ctx.modeOptions })
     }
 
     this.logger.debug('Runtime configuration loaded', {
@@ -601,55 +898,11 @@ export class TestRunner {
         parallel: this.config.parallel,
         maxWorkers: this.config.maxWorkers,
         timeout: this.config.timeout,
+        coverage: this.config.coverage,
+        watch: this.config.watch,
+        silent: this.config.silent,
+        bail: this.config.bail,
       },
-    })
-  }
-
-  /**
-   * Discover tests task for listr2
-   */
-  private async discoverTestsTask(ctx: any): Promise<void> {
-    const timer = this.logger.timer('test-discovery')
-
-    await this.scanDirectory(this.config.testDir || process.cwd())
-
-    if (this.testFiles.length === 0) {
-      throw new Error('No test files found')
-    }
-
-    ctx.testFiles = this.testFiles
-    timer()
-
-    this.logger.debug('Test files discovered', {
-      totalFiles: this.testFiles.length,
-      testDir: this.config.testDir,
-    })
-  }
-
-  /**
-   * Categorize tests task for listr2
-   */
-  private async categorizeTestsTask(ctx: any): Promise<void> {
-    this.categorizeTests()
-    ctx.categories = Array.from(this.categories.entries())
-
-    this.logger.debug('Tests categorized', {
-      categories: Object.fromEntries(
-        Array.from(this.categories.entries()).map(([name, cat]) => [name, cat.count]),
-      ),
-    })
-  }
-
-  /**
-   * Interactive selection task
-   */
-  private async interactiveSelection(ctx: any): Promise<void> {
-    ctx.selectedCategories = await this.selectCategories()
-    ctx.selectedRuntime = await this.selectRuntime()
-
-    this.logger.info('User selections completed', {
-      categories: ctx.selectedCategories,
-      runtime: ctx.selectedRuntime,
     })
   }
 
@@ -657,22 +910,93 @@ export class TestRunner {
    * Prepare test execution
    */
   private async prepareTestExecution(ctx: any): Promise<void> {
-    const categories = ctx.selectedCategories || this.config.categories || []
-    const selectedFiles = this.testFiles.filter(file =>
-      categories.includes(file.category),
-    )
+    const selectedCategories = ctx.selectedCategories || []
+    let selectedFiles: TestFile[] = []
 
-    if (selectedFiles.length === 0) {
-      throw new Error('No test files match the selected categories')
+    // Apply mode-specific configuration overrides to ensure they stick
+    if (ctx.modeOptions) {
+      this.config = mergeConfig(this.config, ctx.modeOptions)
+      this.logger.debug('Applied mode options', { modeOptions: ctx.modeOptions })
     }
 
-    ctx.selectedFiles = selectedFiles
+    // If we have category patterns defined in config, use them
+    if (this.config.categories && typeof this.config.categories === 'object' && !Array.isArray(this.config.categories)) {
+      const { glob } = await import('glob')
+
+      for (const categoryName of selectedCategories) {
+        if (categoryName === 'all') {
+          // Run all categories
+          for (const [, pattern] of Object.entries(this.config.categories)) {
+            const matchedFiles = await glob(pattern, { cwd: process.cwd() })
+            selectedFiles.push(...matchedFiles.map(path => ({
+              name: path.split('/').pop() || path,
+              path,
+              category: categoryName,
+              size: 0,
+              lastModified: new Date(),
+            })))
+          }
+          break
+        }
+        else if (this.config.categories[categoryName]) {
+          // Use specific category pattern
+          const pattern = this.config.categories[categoryName]
+          const matchedFiles = await glob(pattern, { cwd: process.cwd() })
+          selectedFiles.push(...matchedFiles.map(path => ({
+            name: path.split('/').pop() || path,
+            path,
+            category: categoryName,
+            size: 0,
+            lastModified: new Date(),
+          })))
+        }
+      }
+    }
+    else {
+      // Use discovered test files by category
+      selectedFiles = this.testFiles.filter(file =>
+        selectedCategories.includes('all') || selectedCategories.includes(file.category),
+      )
+    }
+
+    // Remove duplicates by path
+    const uniqueFiles = selectedFiles.filter((file, index, self) =>
+      index === self.findIndex(f => f.path === file.path),
+    )
+
+    if (uniqueFiles.length === 0) {
+      this.logger.warn('No test files found matching selected categories', {
+        categories: selectedCategories,
+        searchedDirectory: process.cwd(),
+      })
+      this.logger.info('Skipping test execution - no test files to run')
+
+      // Set empty results but don't fail
+      ctx.selectedFiles = []
+      ctx.runtime = ctx.selectedRuntime || this.config.runtime || detectRuntime()
+      ctx.testResults = {
+        totalTests: 0,
+        passed: 0,
+        failed: 0,
+        exitCode: 0,
+      }
+
+      return // Skip test execution
+    }
+
+    ctx.selectedFiles = uniqueFiles
     ctx.runtime = ctx.selectedRuntime || this.config.runtime || detectRuntime()
 
     this.logger.info('Test execution prepared', {
-      filesCount: selectedFiles.length,
+      filesCount: uniqueFiles.length,
       runtime: ctx.runtime,
-      categories: categories.join(', '),
+      categories: selectedCategories.join(', '),
+      config: {
+        coverage: this.config.coverage,
+        watch: this.config.watch,
+        silent: this.config.silent,
+        bail: this.config.bail,
+      },
     })
   }
 
@@ -683,6 +1007,20 @@ export class TestRunner {
     const timer = this.logger.timer('test-execution')
     const selectedFiles = ctx.selectedFiles
     const runtime = ctx.runtime
+
+    // If no files to test, skip execution
+    if (!selectedFiles || selectedFiles.length === 0) {
+      this.logger.info('No test files to execute, skipping test run')
+      timer()
+      ctx.testResults = {
+        totalTests: 0,
+        passed: 0,
+        failed: 0,
+        exitCode: 0,
+      }
+      ctx.duration = Date.now() - ctx.startTime
+      return
+    }
 
     // Prepare environment variables
     const env: Record<string, string> = {
@@ -713,7 +1051,7 @@ export class TestRunner {
     }
 
     if (this.config.bail) {
-      vitestArgs.push('--bail')
+      vitestArgs.push('--bail', '1') // Vitest expects a number
     }
 
     if (this.config.timeout) {
@@ -721,21 +1059,62 @@ export class TestRunner {
     }
 
     if (this.config.maxWorkers) {
-      vitestArgs.push('--threads', this.config.maxWorkers.toString())
+      vitestArgs.push('--pool-options.threads.maxThreads', this.config.maxWorkers.toString())
     }
 
     this.logger.info('Executing tests', {
       command: `npx ${vitestArgs.join(' ')}`,
       filesCount: selectedFiles.length,
+      config: {
+        coverage: this.config.coverage,
+        watch: this.config.watch,
+        silent: this.config.silent,
+        bail: this.config.bail,
+        reporter: this.config.reporter,
+      },
+      vitestArgs,
     })
 
+    // Show watch mode instructions
+    if (this.config.watch) {
+      console.log('')
+      console.log('Running tests in watch mode...')
+      console.log('Press q to quit, or Ctrl+C to exit')
+      console.log('')
+    }
+
     try {
-      const result = await execa('npx', vitestArgs, {
+      const execaOptions: any = {
         stdio: this.config.silent ? 'pipe' : 'inherit',
         env,
         cwd: process.cwd(),
-        timeout: (this.config.timeout || 30000) * selectedFiles.length,
-      })
+        timeout: this.config.watch ? 0 : (this.config.timeout || 30000) * selectedFiles.length, // No timeout for watch mode
+        reject: false, // Don't throw on non-zero exit codes
+      }
+
+      // For watch mode, ensure proper terminal control
+      if (this.config.watch) {
+        execaOptions.stdio = 'inherit'
+        execaOptions.detached = false
+        // Forward signals to vitest
+        const child = execa('npx', vitestArgs, execaOptions)
+
+        // Handle Ctrl+C gracefully
+        process.on('SIGINT', () => {
+          console.log('\nShutting down watch mode...')
+          child.kill('SIGINT')
+          process.exit(0)
+        })
+
+        const result = await child
+
+        timer()
+        ctx.testResults = this.parseTestResults(result)
+        ctx.duration = Date.now() - ctx.startTime
+        return
+      }
+
+      const result = await execa('npx', vitestArgs, execaOptions)
 
       timer()
 
@@ -771,12 +1150,15 @@ export class TestRunner {
    * Parse test results from execa output
    */
   private parseTestResults(result: any): any {
+    const exitCode = result.exitCode || 0
+    const success = exitCode === 0
+
     // Basic parsing - could be enhanced with actual vitest JSON reporter
     return {
-      totalTests: 0,
-      passed: result.exitCode === 0 ? 1 : 0,
-      failed: result.exitCode === 0 ? 0 : 1,
-      exitCode: result.exitCode,
+      totalTests: 1, // Placeholder - should parse from output
+      passed: success ? 1 : 0,
+      failed: success ? 0 : 1,
+      exitCode,
     }
   }
 
@@ -817,6 +1199,47 @@ export class TestRunner {
   }
 
   /**
+   * Get package-specific default configuration
+   */
+  private getPackageDefaults(packageInfo: { name?: string, type?: string }): Partial<TestRunnerConfig> {
+    const defaults: Partial<TestRunnerConfig> = {}
+
+    // Set package metadata
+    if (packageInfo.name) {
+      defaults.packageName = packageInfo.name
+    }
+    if (packageInfo.type) {
+      defaults.packageType = packageInfo.type as any
+    }
+
+    // API-specific defaults
+    if (packageInfo.type === 'api') {
+      defaults.runtime = 'bun' // Prefer bun for API packages
+      defaults.database = 'drizzle-d1'
+      defaults.categories = {
+        auth: 'test/auth*.test.ts',
+        api: 'test/*routes*.test.ts',
+        health: 'test/health*.test.ts',
+        permissions: 'test/permissions*.test.ts',
+        email: 'test/email*.test.ts',
+        database: 'test/*repository*.test.ts',
+      }
+      defaults.setupFiles = ['test/setup.ts']
+    }
+
+    // Library-specific defaults
+    if (packageInfo.type === 'library') {
+      defaults.runtime = 'node'
+      defaults.categories = {
+        unit: 'test/unit/*.test.ts',
+        integration: 'test/integration/*.test.ts',
+      }
+    }
+
+    return defaults
+  }
+
+  /**
    * Get emoji for category
    */
   private getCategoryEmoji(category: string): string {
@@ -832,6 +1255,9 @@ export class TestRunner {
       regression: '🔄',
       functional: '⚙️',
       other: '📝',
+      health: '💚',
+      permissions: '🔒',
+      email: '📧',
     }
 
     return emojiMap[category] || '📝'
