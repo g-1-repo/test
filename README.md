@@ -67,6 +67,55 @@ test('user authentication flow', async () => {
 })
 ```
 
+### Modern API Usage
+
+```typescript
+// Modern setup with enhanced features
+import { 
+  setupTestFramework, 
+  TestDataFactory,
+  createHttpTestClient,
+  dbTest,
+  factoryTest 
+} from '@go-corp/test-framework'
+import app from '../src/app'
+
+// Configure test framework
+setupTestFramework({
+  app,
+  database: 'sqlite',
+  isolation: 'test',
+  autoCleanup: true
+})
+
+// Database test with automatic cleanup
+dbTest('user creation with database', async (db) => {
+  const factory = new TestDataFactory()
+  const userData = factory.user()
+  
+  // Insert user into database
+  await db.insert(users).values(userData)
+  
+  // Test API endpoint
+  const client = createHttpTestClient(app)
+  const { response, json } = await client.getJSON(`/api/users/${userData.id}`)
+  
+  expect(response.status).toBe(200)
+  expect(json.email).toBe(userData.email)
+})
+
+// Factory test with seeded data
+factoryTest('consistent test data', async (factory) => {
+  const user1 = factory.user()
+  const user2 = factory.user()
+  
+  // Same seed produces consistent data across test runs
+  expect(user1.id).toBeDefined()
+  expect(user2.id).toBeDefined()
+  expect(user1.id).not.toBe(user2.id)
+}, 12345) // Custom seed
+```
+
 ## Core Testing Utilities
 
 ### Request Helpers
@@ -375,8 +424,33 @@ test('async operations', async () => {
 
 ## API Reference
 
-### Core Functions
+### Modern API (Recommended)
 
+#### Database Adapters
+- `createDatabaseAdapter(type, config?)` - Create database adapter for tests
+- `MemoryDatabaseAdapter`, `SqliteDatabaseAdapter`, `D1DatabaseAdapter` - Database implementations
+- `DrizzleSqliteAdapter`, `DrizzleD1Adapter` - Drizzle ORM integrations
+
+#### Test Data Factory
+- `TestDataFactory` - Seeded data generation for consistent tests
+- `factory.user()`, `factory.organization()`, `factory.post()` - Built-in generators
+- `createSeededFactory(seed)` - Factory with custom seed
+
+#### Enhanced HTTP Client
+- `HttpTestClient` - Full-featured test client with retries and cookies
+- `createHttpTestClient(app, options)` - Create HTTP client instance
+
+#### Vitest Integration
+- `setupTestFramework(config)` - Configure test environment
+- `testSuite(name, fn, config)` - Enhanced test suite with setup
+- `testWithContext(name, fn)` - Test with isolated context
+- `dbTest(name, fn)` - Database test with cleanup
+- `httpTest(name, fn)` - HTTP test with session isolation
+- `factoryTest(name, fn, seed?)` - Test with seeded data factory
+
+### Legacy API (Compatibility)
+
+#### Core Functions
 - `requestWithCookies(app, path, init?, jarKey?)` - Make request with cookie persistence
 - `requestJSON(app, path, init, options?)` - Request with JSON parsing and status validation
 - `postJSON(app, path, options?)` - POST request convenience wrapper
@@ -409,14 +483,49 @@ test('async operations', async () => {
 
 ## TypeScript Support
 
-The package includes comprehensive TypeScript definitions:
+The package includes comprehensive TypeScript definitions for all APIs:
 
 ```typescript
+// Core types
 import type { 
+  Runtime,
+  DatabaseProvider,
+  TestEnvironmentConfig,
+  HonoApp
+} from '@go-corp/test-framework'
+
+// HTTP testing types
+import type {
   TestRequestOptions,
   TestResponse,
+  HttpClientOptions
+} from '@go-corp/test-framework'
+
+// Email testing types
+import type {
   TestEmail,
-  TestSetupOptions 
+  TestSetupOptions
+} from '@go-corp/test-framework'
+
+// Factory types
+import type {
+  FactoryConfig,
+  FactoryFunction,
+  TestDataGenerators
+} from '@go-corp/test-framework'
+
+// Store and lifecycle types
+import type {
+  TestStore,
+  IsolationLevel,
+  VitestConfig,
+  TestSuiteConfig,
+  TestRunnerConfig
+} from '@go-corp/test-framework'
+
+// Database adapter type
+import type {
+  DatabaseAdapter
 } from '@go-corp/test-framework'
 ```
 
@@ -439,6 +548,33 @@ bun run lint:fix
 # Test the CLI
 bun run test-runner --help
 ```
+
+## 🚀 Release Management
+
+This project uses [@go-corp/workflow](https://www.npmjs.com/package/@go-corp/workflow) for automated release management:
+
+```bash
+# Interactive release (quality gates, git, npm)
+bun run release
+
+# Dry run (show what would happen)
+bun run release --dry-run
+
+# Skip specific deployments
+bun run release --skip-npm --skip-cloudflare
+
+# Force specific version bump
+bun run release --type minor
+
+# Check workflow status
+bun run workflow:status
+```
+
+**Release Pipeline:**
+- ✅ **Quality Gates**: Auto-fix linting, type checking, tests
+- 🏷️ **Version Management**: Smart semantic versioning with changelog
+- 📦 **Build & Publish**: Automated npm publishing with confirmation
+- 🔗 **GitHub Integration**: Automated releases and tagging
 
 ## License
 
