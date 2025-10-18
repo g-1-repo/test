@@ -1,10 +1,10 @@
-import { afterEach, beforeAll, beforeEach, vi, describe, test, expect } from 'vitest'
-import type { VitestConfig, IsolationLevel, HonoApp } from '../types.js'
+import type { HonoApp, IsolationLevel, VitestConfig } from '../types.js'
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createDatabaseAdapter, detectBestDatabaseProvider } from '../adapters/database.js'
-import { cleanupAllTestStores, getTestStore } from '../store.js'
-import { setupTestEnvironment, setupRuntimeSpecificTests } from '../utils/environment.js'
-import { createHttpTestClient } from '../utils/http-client.js'
 import { TestDataFactory } from '../factory.js'
+import { cleanupAllTestStores, getTestStore } from '../store.js'
+import { setupRuntimeSpecificTests, setupTestEnvironment } from '../utils/environment.js'
+import { createHttpTestClient } from '../utils/http-client.js'
 
 /**
  * Vitest integration configuration
@@ -13,7 +13,7 @@ const defaultVitestConfig: VitestConfig = {
   isolation: 'test',
   autoCleanup: true,
   seededData: true,
-  mockTime: false
+  mockTime: false,
 }
 
 let currentConfig: VitestConfig = defaultVitestConfig
@@ -33,33 +33,34 @@ export function configureVitest(config: Partial<VitestConfig> = {}): void {
  */
 export function setupTestFramework(app?: HonoApp, options: Partial<VitestConfig> = {}): void {
   const config = { ...currentConfig, ...options }
-  
+
   beforeAll(async () => {
     // Setup environment variables
     setupTestEnvironment()
     setupRuntimeSpecificTests()
-    
+
     // Initialize database adapter if needed
     if (config.autoCleanup) {
       try {
         const provider = detectBestDatabaseProvider()
         dbAdapter = createDatabaseAdapter(provider)
         await dbAdapter.initialize()
-      } catch (error) {
+      }
+      catch (error) {
         console.warn('Failed to initialize database adapter:', error)
       }
     }
-    
+
     // Setup HTTP client if app provided
     if (app) {
       httpClient = createHttpTestClient(app)
     }
-    
+
     // Setup data factory if seeded data enabled
     if (config.seededData) {
       dataFactory = new TestDataFactory()
     }
-    
+
     // Mock console methods for cleaner test output
     if (!config.verbose) {
       vi.spyOn(console, 'info').mockImplementation(() => {})
@@ -67,41 +68,42 @@ export function setupTestFramework(app?: HonoApp, options: Partial<VitestConfig>
       vi.spyOn(console, 'log').mockImplementation(() => {})
     }
   })
-  
+
   beforeEach(async () => {
     // Reset test stores based on isolation level
     if (config.isolation === 'test' || config.isolation === 'suite') {
       const store = getTestStore(config.isolation)
       store.clear()
     }
-    
+
     // Clear HTTP client cookies and history if available
     if (httpClient) {
       httpClient.clearCookies()
       httpClient.clearHistory()
     }
-    
+
     // Reset data factory seed if available
     if (dataFactory) {
       dataFactory.setSeed(12345) // Reset to default seed
     }
   })
-  
+
   afterEach(async () => {
     if (config.autoCleanup) {
       // Clean up database
       if (dbAdapter) {
         try {
           await dbAdapter.cleanup()
-        } catch (error) {
+        }
+        catch (error) {
           console.warn('Database cleanup failed:', error)
         }
       }
-      
+
       // Clean up test stores
       await cleanupAllTestStores()
     }
-    
+
     // Restore mocks
     vi.restoreAllMocks()
   })
@@ -113,7 +115,7 @@ export function setupTestFramework(app?: HonoApp, options: Partial<VitestConfig>
 export function createTestContext(isolationLevel: IsolationLevel = 'test') {
   const store = getTestStore(isolationLevel)
   const contextId = `context-${Date.now()}-${Math.random()}`
-  
+
   return {
     store,
     contextId,
@@ -124,7 +126,7 @@ export function createTestContext(isolationLevel: IsolationLevel = 'test') {
       if (httpClient) {
         httpClient.clearCookies(contextId)
       }
-    }
+    },
   }
 }
 
@@ -133,7 +135,7 @@ export function createTestContext(isolationLevel: IsolationLevel = 'test') {
  */
 export function testSuite(name: string, fn: () => void, config?: Partial<VitestConfig>): void {
   const suiteConfig = { ...currentConfig, ...config }
-  
+
   describe(name, () => {
     beforeAll(async () => {
       if (suiteConfig.isolation === 'suite') {
@@ -141,7 +143,7 @@ export function testSuite(name: string, fn: () => void, config?: Partial<VitestC
         store.clear()
       }
     })
-    
+
     fn()
   })
 }
@@ -150,15 +152,16 @@ export function testSuite(name: string, fn: () => void, config?: Partial<VitestC
  * Enhanced test function with context
  */
 export function testWithContext(
-  name: string, 
+  name: string,
   fn: (ctx: ReturnType<typeof createTestContext>) => void | Promise<void>,
-  isolationLevel?: IsolationLevel
+  isolationLevel?: IsolationLevel,
 ): void {
   test(name, async () => {
     const ctx = createTestContext(isolationLevel)
     try {
       await fn(ctx)
-    } finally {
+    }
+    finally {
       await ctx.cleanup()
     }
   })
@@ -169,19 +172,20 @@ export function testWithContext(
  */
 export function dbTest(
   name: string,
-  fn: (db: any) => void | Promise<void>
+  fn: (db: any) => void | Promise<void>,
 ): void {
   test(name, async () => {
     if (!dbAdapter) {
       throw new Error('Database adapter not initialized. Call setupTestFramework first.')
     }
-    
+
     // Create snapshot before test
-    const initialState = dbAdapter.db
-    
+    const _initialState = dbAdapter.db
+
     try {
       await fn(dbAdapter.db)
-    } finally {
+    }
+    finally {
       // Reset database state
       await dbAdapter.reset()
     }
@@ -193,18 +197,19 @@ export function dbTest(
  */
 export function httpTest(
   name: string,
-  fn: (client: ReturnType<typeof createHttpTestClient>) => void | Promise<void>
+  fn: (client: ReturnType<typeof createHttpTestClient>) => void | Promise<void>,
 ): void {
   test(name, async () => {
     if (!httpClient) {
       throw new Error('HTTP client not initialized. Provide app to setupTestFramework.')
     }
-    
+
     const testClient = httpClient.session()
-    
+
     try {
       await fn(testClient)
-    } finally {
+    }
+    finally {
       testClient.clearCookies()
       testClient.clearHistory()
     }
@@ -217,7 +222,7 @@ export function httpTest(
 export function factoryTest(
   name: string,
   fn: (factory: TestDataFactory) => void | Promise<void>,
-  seed?: number
+  seed?: number,
 ): void {
   test(name, async () => {
     const factory = new TestDataFactory(seed)
@@ -230,46 +235,48 @@ export function factoryTest(
  */
 export function timeTest(
   name: string,
-  fn: (timeMock: { advance: (ms: number) => void; setTime: (date: Date) => void }) => void | Promise<void>,
-  initialTime?: Date
+  fn: (timeMock: { advance: (ms: number) => void, setTime: (date: Date) => void }) => void | Promise<void>,
+  initialTime?: Date,
 ): void {
   test(name, async () => {
     const originalNow = Date.now
     const originalDateConstructor = Date
-    
+
     let mockTime = initialTime ? initialTime.getTime() : Date.now()
-    
+
     // Mock Date.now
     Date.now = vi.fn(() => mockTime)
-    
+
     // Mock Date constructor
     global.Date = class MockDate extends originalDateConstructor {
       constructor(...args: any[]) {
         if (args.length === 0) {
           super(mockTime)
-        } else {
+        }
+        else {
           // @ts-ignore
           super(...args)
         }
       }
-      
+
       static now(): number {
         return mockTime
       }
     } as any
-    
+
     const timeMock = {
       advance: (ms: number) => {
         mockTime += ms
       },
       setTime: (date: Date) => {
         mockTime = date.getTime()
-      }
+      },
     }
-    
+
     try {
       await fn(timeMock)
-    } finally {
+    }
+    finally {
       // Restore original time functions
       Date.now = originalNow
       global.Date = originalDateConstructor
@@ -282,7 +289,7 @@ export function timeTest(
  */
 export function snapshotTest<T>(
   name: string,
-  fn: () => T | Promise<T>
+  fn: () => T | Promise<T>,
 ): void {
   test(name, async () => {
     const result = await fn()
@@ -296,17 +303,17 @@ export function snapshotTest<T>(
 export function perfTest(
   name: string,
   fn: () => void | Promise<void>,
-  maxDuration?: number
+  maxDuration?: number,
 ): void {
   test(name, async () => {
     const start = Date.now()
     await fn()
     const duration = Date.now() - start
-    
+
     if (maxDuration && duration > maxDuration) {
       throw new Error(`Performance test exceeded ${maxDuration}ms, took ${duration}ms`)
     }
-    
+
     // Log performance info in verbose mode
     if (currentConfig.verbose || process.env.PERF_LOG === 'true') {
       console.log(`Performance: ${name} completed in ${duration}ms`)
@@ -320,26 +327,27 @@ export function perfTest(
 export function retryTest(
   name: string,
   fn: () => void | Promise<void>,
-  maxRetries: number = 3
+  maxRetries: number = 3,
 ): void {
   test(name, async () => {
     let lastError: Error | null = null
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         await fn()
         return // Success
-      } catch (error) {
+      }
+      catch (error) {
         lastError = error as Error
-        
+
         if (attempt < maxRetries - 1) {
           // Wait before retry (exponential backoff)
-          const delay = Math.pow(2, attempt) * 100
+          const delay = 2 ** attempt * 100
           await new Promise(resolve => setTimeout(resolve, delay))
         }
       }
     }
-    
+
     throw lastError
   })
 }
@@ -349,7 +357,7 @@ export function retryTest(
  */
 export function concurrentTest(
   name: string,
-  fns: Array<() => void | Promise<void>>
+  fns: Array<() => void | Promise<void>>,
 ): void {
   test(name, async () => {
     await Promise.all(fns.map(fn => fn()))
@@ -419,5 +427,5 @@ export default {
   perfTest,
   retryTest,
   concurrentTest,
-  createTestBuilder
+  createTestBuilder,
 }

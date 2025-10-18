@@ -82,7 +82,7 @@ export class TestDataFactory {
   user = this.createFactory((config?: FactoryConfig) => {
     const firstName = faker.person.firstName()
     const lastName = faker.person.lastName()
-    const username = faker.internet.userName({ firstName, lastName }).toLowerCase()
+    const username = faker.internet.username({ firstName, lastName }).toLowerCase()
 
     return {
       id: faker.string.uuid(),

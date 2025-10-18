@@ -1,8 +1,8 @@
-import type { 
-  HonoApp, 
-  HttpClientOptions, 
-  TestRequestOptions, 
-  TestResponse 
+import type {
+  HonoApp,
+  HttpClientOptions,
+  TestRequestOptions,
+  TestResponse,
 } from '../types.js'
 
 // Re-export types for direct import
@@ -15,7 +15,7 @@ export class HttpTestClient {
   private app: HonoApp
   private options: HttpClientOptions
   private cookieJars = new Map<string, string>()
-  private requestHistory: Array<{ request: TestRequestOptions; response: TestResponse; timestamp: Date }> = []
+  private requestHistory: Array<{ request: TestRequestOptions, response: TestResponse, timestamp: Date }> = []
   private defaultTimeout = 5000
 
   constructor(app: HonoApp, options: HttpClientOptions = {}) {
@@ -26,7 +26,7 @@ export class HttpTestClient {
       timeout: 5000,
       retries: 0,
       cookieJar: 'default',
-      ...options
+      ...options,
     }
   }
 
@@ -39,7 +39,8 @@ export class HttpTestClient {
       // @ts-ignore - Dynamic import may not be available
       const { env } = await import('cloudflare:test')
       return await this.app.request(path, init, env)
-    } catch {
+    }
+    catch {
       // Fallback to standard Hono request
       return await this.app.request(path, init)
     }
@@ -52,12 +53,12 @@ export class HttpTestClient {
     if (path.startsWith('http')) {
       return path
     }
-    
+
     const baseUrl = this.options.baseUrl || ''
     if (baseUrl && !path.startsWith('/')) {
-      path = '/' + path
+      path = `/${path}`
     }
-    
+
     return baseUrl + path
   }
 
@@ -66,36 +67,38 @@ export class HttpTestClient {
    */
   private prepareHeaders(options: TestRequestOptions): Headers {
     const headers = new Headers()
-    
+
     // Add default headers
     Object.entries(this.options.defaultHeaders || {}).forEach(([key, value]) => {
       headers.set(key, value)
     })
-    
+
     // Add request-specific headers
     if (options.headers) {
       if (options.headers instanceof Headers) {
         options.headers.forEach((value, key) => {
           headers.set(key, value)
         })
-      } else if (Array.isArray(options.headers)) {
+      }
+      else if (Array.isArray(options.headers)) {
         options.headers.forEach(([key, value]) => {
           headers.set(key, value)
         })
-      } else {
+      }
+      else {
         Object.entries(options.headers).forEach(([key, value]) => {
           headers.set(key, value)
         })
       }
     }
-    
+
     // Add cookies from jar
     const cookieJar = options.cookieJar || this.options.cookieJar || 'default'
     const existingCookies = this.cookieJars.get(cookieJar)
     if (existingCookies && !headers.has('cookie')) {
       headers.set('cookie', existingCookies)
     }
-    
+
     return headers
   }
 
@@ -108,14 +111,14 @@ export class HttpTestClient {
     if (setCookie) {
       this.cookieJars.set(cookieJar, setCookie)
     }
-    
+
     const responseTime = Date.now() - startTime
-    
+
     // Create enhanced response
     const enhancedResponse = response as TestResponse
     enhancedResponse.responseTime = responseTime
     enhancedResponse.request = requestOptions
-    
+
     return enhancedResponse
   }
 
@@ -127,74 +130,74 @@ export class HttpTestClient {
     const timeout = options.timeout || this.options.timeout || this.defaultTimeout
     const retries = options.retries ?? this.options.retries ?? 0
     const cookieJar = options.cookieJar || this.options.cookieJar || 'default'
-    
+
     const headers = this.prepareHeaders(options)
-    
+
     const requestInit: RequestInit = {
       ...options,
-      headers: Object.fromEntries(headers.entries())
+      headers: Object.fromEntries(headers.entries()),
     }
-    
+
     let lastError: Error | null = null
-    
+
     // Attempt request with retries
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const startTime = Date.now()
-        
+
         // Create timeout promise
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout)
         })
-        
+
         // Make request with timeout
         const response = await Promise.race([
           this.makeAppRequest(fullUrl, requestInit),
-          timeoutPromise
+          timeoutPromise,
         ])
-        
+
         const enhancedResponse = this.handleResponse(response, cookieJar, startTime, options)
-        
+
         // Validate status if expectedStatus provided
         if (options.expectedStatus !== undefined) {
-          const expected = Array.isArray(options.expectedStatus) 
-            ? options.expectedStatus 
+          const expected = Array.isArray(options.expectedStatus)
+            ? options.expectedStatus
             : [options.expectedStatus]
-            
+
           if (!expected.includes(response.status)) {
             const body = await response.text()
             throw new Error(`Expected status ${expected.join(' or ')}, got ${response.status}: ${body}`)
           }
         }
-        
+
         // Add to history
         this.requestHistory.push({
           request: options,
           response: enhancedResponse,
-          timestamp: new Date()
+          timestamp: new Date(),
         })
-        
+
         return enhancedResponse
-        
-      } catch (error) {
+      }
+      catch (error) {
         lastError = error as Error
-        
+
         // Don't retry on expected status errors
         if (error instanceof Error && error.message.includes('Expected status')) {
           break
         }
-        
+
         // Don't retry on last attempt
         if (attempt === retries) {
           break
         }
-        
+
         // Wait before retry (exponential backoff)
-        const delay = Math.pow(2, attempt) * 100
+        const delay = 2 ** attempt * 100
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
-    
+
     throw lastError || new Error('Request failed')
   }
 
@@ -236,35 +239,35 @@ export class HttpTestClient {
   /**
    * POST request with JSON body
    */
-  async postJSON<T = any>(path: string, body: any, options: Omit<TestRequestOptions, 'method' | 'body' | 'headers'> & { headers?: Record<string, string> } = {}): Promise<TestResponse> {
+  async postJSON<_T = any>(path: string, body: any, options: Omit<TestRequestOptions, 'method' | 'body' | 'headers'> & { headers?: Record<string, string> } = {}): Promise<TestResponse> {
     return this.post(path, {
       ...options,
       headers: {
         'content-type': 'application/json',
-        ...options.headers
+        ...options.headers,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
   }
 
   /**
    * PUT request with JSON body
    */
-  async putJSON<T = any>(path: string, body: any, options: Omit<TestRequestOptions, 'method' | 'body' | 'headers'> & { headers?: Record<string, string> } = {}): Promise<TestResponse> {
+  async putJSON<_T = any>(path: string, body: any, options: Omit<TestRequestOptions, 'method' | 'body' | 'headers'> & { headers?: Record<string, string> } = {}): Promise<TestResponse> {
     return this.put(path, {
       ...options,
       headers: {
         'content-type': 'application/json',
-        ...options.headers
+        ...options.headers,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
   }
 
   /**
    * GET request with automatic JSON parsing
    */
-  async getJSON<T = any>(path: string, options: Omit<TestRequestOptions, 'method'> = {}): Promise<{ response: TestResponse; json: T }> {
+  async getJSON<T = any>(path: string, options: Omit<TestRequestOptions, 'method'> = {}): Promise<{ response: TestResponse, json: T }> {
     const response = await this.get(path, options)
     const json = await response.json<T>()
     return { response, json }
@@ -273,7 +276,7 @@ export class HttpTestClient {
   /**
    * Request with automatic JSON parsing
    */
-  async requestJSON<T = any>(path: string, options: TestRequestOptions = {}): Promise<{ response: TestResponse; json: T }> {
+  async requestJSON<T = any>(path: string, options: TestRequestOptions = {}): Promise<{ response: TestResponse, json: T }> {
     const response = await this.request(path, options)
     const json = await response.json<T>()
     return { response, json }
@@ -285,7 +288,8 @@ export class HttpTestClient {
   clearCookies(jarKey?: string): void {
     if (jarKey) {
       this.cookieJars.delete(jarKey)
-    } else {
+    }
+    else {
       this.cookieJars.clear()
     }
   }
@@ -307,7 +311,7 @@ export class HttpTestClient {
   /**
    * Get request history
    */
-  getHistory(): Array<{ request: TestRequestOptions; response: TestResponse; timestamp: Date }> {
+  getHistory(): Array<{ request: TestRequestOptions, response: TestResponse, timestamp: Date }> {
     return [...this.requestHistory]
   }
 
@@ -321,7 +325,7 @@ export class HttpTestClient {
   /**
    * Get last request
    */
-  getLastRequest(): { request: TestRequestOptions; response: TestResponse; timestamp: Date } | undefined {
+  getLastRequest(): { request: TestRequestOptions, response: TestResponse, timestamp: Date } | undefined {
     return this.requestHistory[this.requestHistory.length - 1]
   }
 
@@ -332,7 +336,7 @@ export class HttpTestClient {
     const sessionKey = jarKey || `session-${Date.now()}-${Math.random()}`
     return new HttpTestClient(this.app, {
       ...this.options,
-      cookieJar: sessionKey
+      cookieJar: sessionKey,
     })
   }
 
