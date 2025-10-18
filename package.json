@@ -1,6 +1,6 @@
 {
   "name": "@go-corp/test-suite",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Complete testing suite for Hono applications across Cloudflare Workers, Node.js, and Bun runtimes",
   "type": "module",
   "main": "./dist/index.js",
