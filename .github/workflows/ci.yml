@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        runtime: [node, bun]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      if: matrix.runtime == 'node'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Setup Bun
+      if: matrix.runtime == 'bun'
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install dependencies (Node.js)
+      if: matrix.runtime == 'node'
+      run: npm ci
+
+    - name: Install dependencies (Bun)
+      if: matrix.runtime == 'bun'
+      run: bun install --frozen-lockfile
+
+    - name: Type check
+      run: |
+        if [ "${{ matrix.runtime }}" = "node" ]; then
+          npm run typecheck
+        else
+          bun run typecheck
+        fi
+
+    - name: Lint
+      run: |
+        if [ "${{ matrix.runtime }}" = "node" ]; then
+          npm run lint
+        else
+          bun run lint
+        fi
+
+    - name: Build
+      run: |
+        if [ "${{ matrix.runtime }}" = "node" ]; then
+          npm run build
+        else
+          bun run build
+        fi
+
+    - name: Test CLI
+      run: |
+        # Basic CLI functionality test
+        node dist/cli/test-runner.js --help
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+
+    - name: Security audit
+      run: |
+        # Run npm audit for security vulnerabilities
+        npm audit --audit-level high || echo "Security audit completed"
+
+    - name: Check for outdated dependencies
+      run: |
+        echo "Checking for outdated dependencies..."
+        bun outdated || echo "Outdated check completed"

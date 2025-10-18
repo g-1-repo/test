@@ -1,0 +1,78 @@
+{
+  "name": "@go-corp/test-framework",
+  "version": "1.0.1",
+  "description": "Test framework utilities for Cloudflare Workers and Hono applications",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run clean && bun run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "test-runner": "bun run src/cli/test-runner.ts",
+    "release": "node scripts/release.js",
+    "release:help": "node scripts/release.js --help",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "changeset:status": "changeset status",
+    "publish:public": "bun run build && npm publish --access public",
+    "workflow:init": "go-workflow init",
+    "workflow:release": "go-workflow release",
+    "workflow:feature": "go-workflow feature",
+    "workflow:deploy": "go-workflow deploy",
+    "workflow:status": "go-workflow status",
+    "workflow:demo": "node scripts/workflow-demo.js"
+  },
+  "keywords": [
+    "testing",
+    "test-framework",
+    "cloudflare-workers",
+    "hono",
+    "typescript",
+    "cookies",
+    "session-management"
+  ],
+  "author": "Go Corp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/go-corp/test-framework"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.44.6",
+    "hono": "^4.10.1",
+    "vitest": "^3.2.4"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^6.0.0",
+    "@changesets/cli": "^2.29.7",
+    "@golive_me/go-workflow": "^1.0.12",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.8.1",
+    "eslint": "^9.38.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "better-sqlite3": "^12.4.1",
+    "enquirer": "^2.4.1"
+  }
+}
