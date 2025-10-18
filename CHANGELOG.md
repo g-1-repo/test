@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0] - 2025-10-18
+
+### Features
+
+- integrate with consolidated go-utils package
+
+
 ## [1.1.0] - 2025-10-18
 
 ### Features
