@@ -1,4 +1,4 @@
-# @go-corp/test-suite Configuration Example
+# @g-1/test Configuration Example
 #
 # This file shows all available configuration options for the test runner.
 # Copy this to .gotestsuiterc, .gotestsuiterc.json, or add to package.json under "gotestsuite" key.

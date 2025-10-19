@@ -1,4 +1,6 @@
-# @go-corp/test-suite
+# @g-1/test
+
+[![CI](https://github.com/g-1-repo/test/actions/workflows/ci.yml/badge.svg)](https://github.com/g-1-repo/test/actions/workflows/ci.yml)
 
 [![CI](https://github.com/g-1-repo/test/actions/workflows/ci.yml/badge.svg)](https://github.com/g-1-repo/test/actions/workflows/ci.yml)
 
@@ -8,7 +10,7 @@ A comprehensive testing toolkit for Hono applications across Cloudflare Workers,
 
 ## 🎯 What We've Built
 
-### 🛠️ Complete Testing Suite (@go-corp/test-suite)
+### 🛠️ Complete Testing Suite (@g-1/test)
 •  **Multi-Runtime Support**: Works seamlessly with Cloudflare Workers, Node.js, and Bun  
 •  **Environment-Agnostic**: Adapters for D1, SQLite, in-memory, and Drizzle databases  
 •  **NPM Ready**: Complete package structure for publishing and reuse across projects  
@@ -33,7 +35,7 @@ A comprehensive testing toolkit for Hono applications across Cloudflare Workers,
 ## Installation
 
 ```bash
-bun add --dev @go-corp/test-suite
+bun add --dev @g-1/test
 ```
 
 ## Quick Start
@@ -42,7 +44,7 @@ bun add --dev @go-corp/test-suite
 
 ```typescript
 // test/setup.ts
-import { setupCloudflareWorkerTests } from '@go-corp/test-suite'
+import { setupCloudflareWorkerTests } from '@g-1/test'
 
 // Sets up console mocking and required environment variables
 setupCloudflareWorkerTests()
@@ -51,7 +53,7 @@ setupCloudflareWorkerTests()
 ### Simple Request Testing
 
 ```typescript
-import { requestWithCookies, postJSON } from '@go-corp/test-suite'
+import { requestWithCookies, postJSON } from '@g-1/test
 import app from '../src/app'
 
 test('user authentication flow', async () => {
@@ -79,7 +81,7 @@ import {
   createHttpTestClient,
   dbTest,
   factoryTest 
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 import app from '../src/app'
 
 // Configure test framework
@@ -237,7 +239,7 @@ Set environment variables for test execution:
 Makes a request with automatic cookie persistence across test requests.
 
 ```typescript
-import { requestWithCookies, resetCookies } from '@go-corp/test-suite'
+import { requestWithCookies, resetCookies } from '@g-1/test'
 
 // Start with clean session
 resetCookies()
@@ -299,7 +301,7 @@ const { json } = await postJSON(app, '/api/users', {
 Use different `jarKey` values to isolate test sessions:
 
 ```typescript
-import { requestWithCookies, resetCookies } from '@go-corp/test-suite'
+import { requestWithCookies, resetCookies } from '@g-1/test'
 
 test('concurrent user sessions', async () => {
   // User A login
@@ -332,7 +334,7 @@ test('concurrent user sessions', async () => {
 Create isolated test contexts with automatic cleanup:
 
 ```typescript
-import { createTestContext } from '@go-corp/test-suite'
+import { createTestContext } from '@g-1/test'
 
 test('isolated test context', async () => {
   const ctx = createTestContext()
@@ -361,7 +363,7 @@ import {
   clearOutbox, 
   assertEmailSent, 
   extractVerificationLink 
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 
 test('password reset flow', async () => {
   await clearOutbox(app)
@@ -393,7 +395,7 @@ import {
   getLastEmail,
   waitForEmail,
   extractOTPCode
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 
 test('email verification with OTP', async () => {
   await clearOutbox(app)
@@ -424,7 +426,7 @@ test('email verification with OTP', async () => {
 ### Basic Setup
 
 ```typescript
-import { setupCloudflareWorkerTests } from '@go-corp/test-suite'
+import { setupCloudflareWorkerTests } from '@g-1/test'
 
 // Automatic setup with sensible defaults
 setupCloudflareWorkerTests()
@@ -433,7 +435,7 @@ setupCloudflareWorkerTests()
 ### Custom Setup
 
 ```typescript
-import { setupTestEnvironment } from '@go-corp/test-suite'
+import { setupTestEnvironment } from '@g-1/test'
 
 setupTestEnvironment({
   mockConsole: true,
@@ -453,7 +455,7 @@ setupTestEnvironment({
 ### Environment Variables
 
 ```typescript
-import { ensureTestEnv, withTestEnv } from '@go-corp/test-suite'
+import { ensureTestEnv, withTestEnv } from '@g-1/test'
 
 // Ensure variables exist with defaults
 ensureTestEnv({
@@ -476,7 +478,7 @@ await testWithEnv()
 ### Time Mocking
 
 ```typescript
-import { createTimeMock } from '@go-corp/test-suite'
+import { createTimeMock } from '@g-1/test'
 
 test('time-sensitive operations', async () => {
   const mockTime = createTimeMock(new Date('2024-01-01'))
@@ -504,7 +506,7 @@ test('time-sensitive operations', async () => {
 ### Unique Data Generation
 
 ```typescript
-import { uniqueEmail, uniqueUsername } from '@go-corp/test-suite'
+import { uniqueEmail, uniqueUsername } from '@g-1/test'
 
 test('user creation', async () => {
   const email = uniqueEmail() // test+1@example.com
@@ -519,7 +521,7 @@ test('user creation', async () => {
 ### Wait Utility
 
 ```typescript
-import { wait } from '@go-corp/test-suite'
+import { wait } from '@g-1/test'
 
 test('async operations', async () => {
   // Trigger async operation
@@ -604,27 +606,27 @@ import type {
   DatabaseProvider,
   TestEnvironmentConfig,
   HonoApp
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 
 // HTTP testing types
 import type {
   TestRequestOptions,
   TestResponse,
   HttpClientOptions
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 
 // Email testing types
 import type {
   TestEmail,
   TestSetupOptions
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 
 // Factory types
 import type {
   FactoryConfig,
   FactoryFunction,
   TestDataGenerators
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 
 // Store and lifecycle types
 import type {
@@ -638,7 +640,7 @@ import type {
 // Database adapter type
 import type {
   DatabaseAdapter
-} from '@go-corp/test-suite'
+} from '@g-1/test'
 ```
 
 ## 🛠️ Development

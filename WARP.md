@@ -14,7 +14,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Testing
 
-- Interactive test runner (category/runtime selection for @go-corp/test-suite, runs Vitest under the hood):
+- Interactive test runner (category/runtime selection for @g-1/test, runs Vitest under the hood):
   - `bun run test-runner`
   - Help and options: `bun run test-runner --help`
 - Run all tests with Vitest directly: `npx vitest run`
