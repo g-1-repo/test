@@ -1,7 +1,7 @@
 {
-  "name": "@go-corp/test-suite",
+  "name": "@g-1/test",
   "version": "1.2.4",
-  "description": "Complete testing suite for Hono applications across Cloudflare Workers, Node.js, and Bun runtimes",
+  "description": "G1 Test Suite. The unified, high-rigor test framework and suite for all G1 services. Guarantees code integrity and compliance across all products.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -48,11 +48,11 @@
     "cookies",
     "session-management"
   ],
-  "author": "Go Corp",
+  "author": "G1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/golive-dev/go-test-suite"
+    "url": "https://github.com/g-1-repo/test"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.44.6",
@@ -61,7 +61,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.0.0",
-    "@go-corp/workflow": "^2.12.11",
+    "@go-corp/workflow": "^2.12.14",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.8.1",
     "eslint": "^9.38.0",
