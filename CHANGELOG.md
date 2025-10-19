@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1] - 2025-10-19
+
+### Bug Fixes
+
+- update lockfile after dependency change to @g-1/util
+
+
 ## [1.3.0] - 2025-10-19
 
 ### Features
