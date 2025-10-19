@@ -3,21 +3,21 @@
 ## Package Rename
 
 **Old Name:** `@go-corp/test-framework`  
-**New Name:** `@go-corp/test-suite`  
-**Reason:** Better reflects the package's true nature as a comprehensive testing toolkit rather than a test framework
+**New Name:** `@g-1/test`  
+**Reason:** Reflects the new G1 brand and scope while keeping the package identity as a comprehensive testing suite
 
 ## What Changed
 
 ### ✅ Package Identity
-- Package name: `@go-corp/test-framework` → `@go-corp/test-suite`
+- Package name: `@go-corp/test-framework` → `@g-1/test`
 - Description: Now accurately describes it as a "testing suite"
-- Repository: Updated to match new name
+- Repository: Updated to match new name and organization scope (G1)
 
 ### ✅ No Breaking Changes
 - All exports remain the same
 - All function signatures unchanged
 - All TypeScript types unchanged
-- All APIs work exactly as before
+- All APIs work exactly as before (package scope changed only)
 
 ## Migration Steps
 
@@ -26,7 +26,7 @@
 {
   "devDependencies": {
 -   "@go-corp/test-framework": "^1.0.x",
-+   "@go-corp/test-suite": "^1.0.x"
++   "@g-1/test": "^1.0.x"
   }
 }
 ```
@@ -34,10 +34,10 @@
 ### 2. Update import statements
 ```diff
 - import { requestJSON, postJSON } from '@go-corp/test-framework'
-+ import { requestJSON, postJSON } from '@go-corp/test-suite'
++ import { requestJSON, postJSON } from '@g-1/test'
 
 - import type { TestResponse } from '@go-corp/test-framework'
-+ import type { TestResponse } from '@go-corp/test-suite'
++ import type { TestResponse } from '@g-1/test'
 ```
 
 ### 3. Install the new package
@@ -46,7 +46,7 @@
 bun remove @go-corp/test-framework
 
 # Install new package
-bun add --dev @go-corp/test-suite
+bun add --dev @g-1/test
 ```
 
 ## What's Next
