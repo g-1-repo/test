@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0] - 2025-10-19
+
+### Features
+
+- add NPM publish workflow and update package config (#4)
+
+### Other Changes
+
+- chore: commit changes before release
+- docs: rebrand to G1 and update npm path to @g-1/test (#3)
+- chore: add Dependabot and CI badge (#2)
+- chore(ci): add GitHub Actions (CI and Release) and PR template; update repository URL (#1)
+
+
 ## [1.2.4] - 2025-10-18
 
 ### Other Changes
