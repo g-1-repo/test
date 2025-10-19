@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3] - 2025-10-19
+
+### Bug Fixes
+
+- remove bundle size check from test package workflow
+
+
 ## [1.3.2] - 2025-10-19
 
 ### Bug Fixes
