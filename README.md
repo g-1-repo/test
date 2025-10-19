@@ -1,5 +1,7 @@
 # @go-corp/test-suite
 
+[![CI](https://github.com/g-1-repo/test/actions/workflows/ci.yml/badge.svg)](https://github.com/g-1-repo/test/actions/workflows/ci.yml)
+
 🧪 **Complete Testing Suite for Hono Applications**
 
 A comprehensive testing toolkit for Hono applications across Cloudflare Workers, Node.js, and Bun runtimes. Features HTTP test utilities, smart data factories, database adapters, and environment management - everything you need to test modern web applications.
