@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "go-test-suite": "./dist/cli/test-runner.js"
+    "g1-test-suite": "./dist/cli/test-runner.js"
   },
   "exports": {
     ".": {
@@ -68,9 +68,12 @@
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
-    "@go-corp/utils": "^1.7.2",
+    "@g-1/util": "^1.8.0",
     "better-sqlite3": "^12.4.1",
     "chalk": "^5.6.2",
     "cosmiconfig": "^9.0.0",
